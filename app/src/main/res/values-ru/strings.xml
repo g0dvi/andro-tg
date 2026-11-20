@@ -159,4 +159,14 @@
     <string name="update_open_failed">Не удалось открыть страницу релиза</string>
     <string name="shortcut_toggle">Переключить прокси</string>
     <string name="shortcut_confirm">Другое приложение запросило это действие. Подтверди его, чтобы продолжить.</string>
+    <string name="self_updates_section">Обновления приложения</string>
+    <string name="self_updates_hint">URL JSON-манифеста. Проверяется при каждом запуске: новая сборка с той же подписью ставится поверх, настройки сохраняются.</string>
+    <string name="self_update_check">Проверить обновления</string>
+    <string name="self_update_checking">Проверяем…</string>
+    <string name="self_update_current">Уже последняя версия</string>
+    <string name="self_update_failed">Проверка не удалась</string>
+    <string name="self_update_found">Обновление готово, открываем установщик…</string>
+    <string name="self_update_channel">Обновления приложения</string>
+    <string name="self_update_ready_title">Готово обновление %1$s</string>
+    <string name="self_update_ready_text">Нажми, чтобы установить</string>
 </resources>

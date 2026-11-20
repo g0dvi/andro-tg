@@ -27,6 +27,11 @@ android {
         versionName = providers.gradleProperty("appVersionName").orElse("1.0.0").get()
         buildConfigField("String", "CORE_VERSION", "\"$coreVersion\"")
         buildConfigField("boolean", "APP_UPDATES_ENABLED", providers.gradleProperty("appUpdatesEnabled").orElse("false").get())
+        buildConfigField(
+            "String",
+            "UPDATE_MANIFEST_URL",
+            "\"" + providers.gradleProperty("updateManifestUrl").orElse("").get() + "\""
+        )
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -35,6 +40,15 @@ android {
         create("arm64") {
             dimension = "arch"
             ndk.abiFilters.add("arm64-v8a")
+        }
+        create("armv7") {
+            dimension = "arch"
+            ndk.abiFilters.add("armeabi-v7a")
+        }
+        create("universal") {
+            dimension = "arch"
+            ndk.abiFilters.add("arm64-v8a")
+            ndk.abiFilters.add("armeabi-v7a")
         }
         create("emulator") {
             dimension = "arch"
@@ -77,7 +91,9 @@ android {
     buildFeatures { compose = true; buildConfig = true }
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        jniLibs.useLegacyPackaging = false
+        // MIUI 12 (Android 10) на Redmi 9A/9C падает с «Приложение не установлено»
+        // при extractNativeLibs=false, поэтому кладём .so в legacy-режиме.
+        jniLibs.useLegacyPackaging = true
     }
     // Old local builds may leave Rust binaries here; the Python-based application never ships them.
     sourceSets.getByName("main").jniLibs.setSrcDirs(emptyList<String>())
@@ -86,15 +102,16 @@ android {
 }
 chaquopy {
     defaultConfig {
-        version = "3.13"
+        // Chaquopy собирает 3.12/3.13 только под arm64-v8a и x86_64;
+        // для armeabi-v7a (Redmi 9C/9A бывают 32-битными) нужен Python 3.11.
+        version = "3.11"
         (providers.gradleProperty("buildPython").orNull ?: localProps.getProperty("buildPython"))?.let { buildPython(it) }
         pip {
             install("-r", "requirements-android.txt")
         }
     }
     sourceSets {
-        getByName("main") {
-            srcDir("src/main/python")
+        getByName("main") {            srcDir("src/main/python")
             // Include only the proxy package. The locked tree includes the Android AES loader.
             srcDir(rootProject.file("upstream/flowseal"))
             exclude("tests/**", "LICENSE", "*.json", "*.md")

@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.amurcanov.tgwsproxy.ProxyService
 import com.amurcanov.tgwsproxy.R
+import com.amurcanov.tgwsproxy.SelfUpdate
 import com.amurcanov.tgwsproxy.SettingsStore
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -86,6 +87,7 @@ fun SettingsTab(settingsStore: SettingsStore) {
     val autoStartOnBoot by settingsStore.autoStartOnBoot.collectAsStateWithLifecycle(initialValue = false)
     val savedSecretKey by settingsStore.secretKey.collectAsStateWithLifecycle(initialValue = "LOADING")
     val themeMode by settingsStore.themeMode.collectAsStateWithLifecycle(initialValue = ThemeModes.DARK)
+    val savedUpdateManifestUrl by settingsStore.updateManifestUrl.collectAsStateWithLifecycle(initialValue = "")
 
     if (!isReady) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -122,6 +124,9 @@ fun SettingsTab(settingsStore: SettingsStore) {
     var customCfDomain by rememberSaveable(savedCustomDomain) { mutableStateOf(savedCustomDomain) }
     var cfWorkerDomain by rememberSaveable(savedWorkerDomain) { mutableStateOf(savedWorkerDomain) }
     var secretKeyText by remember(savedSecretKey) { mutableStateOf(if (savedSecretKey == "LOADING") "" else savedSecretKey) }
+    var updateManifestUrl by rememberSaveable(savedUpdateManifestUrl) { mutableStateOf(savedUpdateManifestUrl) }
+    // 0 — ничего не показываем, 1 — проверяем, 2 — обновлений нет, 3 — ошибка, 4 — найдено
+    var updateCheckState by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(savedSecretKey) {
         if (savedSecretKey == "") {
@@ -330,6 +335,53 @@ fun SettingsTab(settingsStore: SettingsStore) {
 
         SectionLabel(stringResource(R.string.language))
         LanguageSelector()
+
+        SectionLabel(stringResource(R.string.self_updates_section))
+        MonoLabel(stringResource(R.string.self_updates_hint))
+        Spacer(Modifier.height(8.dp))
+        BrandField(
+            value = updateManifestUrl,
+            onValueChange = { newValue ->
+                updateManifestUrl = newValue
+                updateCheckState = 0
+                scope.launch { settingsStore.saveUpdateManifestUrl(newValue) }
+            },
+            keyboardType = KeyboardType.Uri,
+            placeholder = "https://example.com/update.json",
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(Modifier.height(8.dp))
+        if (updateCheckState != 0) {
+            MonoLabel(
+                text = stringResource(
+                    when (updateCheckState) {
+                        1 -> R.string.self_update_checking
+                        2 -> R.string.self_update_current
+                        4 -> R.string.self_update_found
+                        else -> R.string.self_update_failed
+                    }
+                )
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        BrandButton(
+            text = stringResource(R.string.self_update_check),
+            enabled = updateCheckState != 1 && updateManifestUrl.isNotBlank(),
+            onClick = {
+                updateCheckState = 1
+                scope.launch {
+                    when (SelfUpdate.checkAndPrepare(context)) {
+                        SelfUpdate.CheckResult.NO_URL,
+                        SelfUpdate.CheckResult.FAILED -> updateCheckState = 3
+                        SelfUpdate.CheckResult.UP_TO_DATE -> updateCheckState = 2
+                        SelfUpdate.CheckResult.READY -> {
+                            updateCheckState = 4
+                            SelfUpdate.cachedApk(context)?.let { SelfUpdate.install(context, it) }
+                        }
+                    }
+                }
+            }
+        )
     }
 }
 

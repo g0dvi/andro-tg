@@ -13,6 +13,7 @@ import logging
 import logging.handlers
 import os
 import re
+import socket
 import ssl
 import threading
 import time
@@ -26,6 +27,25 @@ from proxy import tg_ws_proxy as core
 from proxy.balancer import balancer
 from proxy.stats import stats as core_stats
 import route_probe
+
+# На мобильных сетях у Cloudflare/Telegram часто есть и A, и AAAA, причём
+# IPv6-маршрут бывает «чёрной дырой»: TCP-коннект висит до общего дедлайна,
+# и asyncio не успевает попробовать IPv4. Ядро Flowseal ходит по именам,
+# поэтому просто ставим IPv4 вперёд, оставляя IPv6 запасным вариантом.
+_ORIGINAL_GETADDRINFO = socket.getaddrinfo
+
+
+def _ipv4_first_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    results = _ORIGINAL_GETADDRINFO(host, port, family, type, proto, flags)
+    if family in (0, socket.AF_UNSPEC):
+        ipv4 = [item for item in results if item[0] == socket.AF_INET]
+        if ipv4 and len(ipv4) != len(results):
+            rest = [item for item in results if item[0] != socket.AF_INET]
+            return ipv4 + rest
+    return results
+
+
+socket.getaddrinfo = _ipv4_first_getaddrinfo
 
 START_TIMEOUT = 15.0
 STOP_TIMEOUT = 15.0

@@ -177,6 +177,13 @@ fun MainContent(settingsStore: SettingsStore) {
         }
     }
 
+    // Собственный канал обновлений: манифест тянется при каждом старте (это
+    // один маленький HTTPS-запрос), сам APK — только если версия новее.
+    // Готовый файл показывается в уведомлении, установку подтверждает система.
+    LaunchedEffect(Unit) {
+        SelfUpdate.checkAndPrepare(context)
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top),
         containerColor = Color.Transparent,

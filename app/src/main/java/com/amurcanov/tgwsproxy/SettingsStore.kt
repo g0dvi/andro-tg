@@ -61,6 +61,7 @@ class SettingsStore(private val context: Context) {
         val UPDATE_DIALOG_LAST_ACTION_AT = longPreferencesKey("update_dialog_last_action_at")
         val DIRECT_DC_DEFAULTS_MIGRATED = booleanPreferencesKey("direct_dc_defaults_migrated")
         val DIRECT_DC_DEFAULTS_V2_MIGRATED = booleanPreferencesKey("direct_dc_defaults_v2_migrated")
+        val UPDATE_MANIFEST_URL = stringPreferencesKey("update_manifest_url")
     }
 
     val isReady: Flow<Boolean> = context.dataStore.data.map { true }
@@ -109,6 +110,18 @@ class SettingsStore(private val context: Context) {
     val updateDialogLastActionVersion: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION_VERSION] ?: "" }
     val updateDialogLastAction: Flow<String> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION] ?: "" }
     val updateDialogLastActionAt: Flow<Long> = context.dataStore.data.map { it[Keys.UPDATE_DIALOG_LAST_ACTION_AT] ?: 0L }
+
+    /**
+     * Манифест собственного канала обновлений. Значение по умолчанию берётся из
+     * сборки, но пользователь может вписать свой URL в настройках.
+     */
+    val updateManifestUrl: Flow<String> = context.dataStore.data.map {
+        it[Keys.UPDATE_MANIFEST_URL] ?: BuildConfig.UPDATE_MANIFEST_URL
+    }
+
+    suspend fun saveUpdateManifestUrl(url: String) {
+        context.dataStore.edit { it[Keys.UPDATE_MANIFEST_URL] = url.trim() }
+    }
 
     suspend fun saveSecretKey(key: String) {
         context.dataStore.edit { it[Keys.SECRET_KEY] = key }
