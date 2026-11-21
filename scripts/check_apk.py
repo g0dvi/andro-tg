@@ -8,13 +8,11 @@ import struct
 import zipfile
 
 # Play Protect classifies sideloaded apps that can download or install other
-# packages as potentially harmful. The release no longer contains any of these
-# capabilities; fail the build if one returns through code, a dependency or a
-# resource merge.
+# packages as potentially harmful. This fork keeps a self-update channel on
+# purpose (sideloaded APKs, no Google Play distribution), so the installer
+# capability is allowed; the remaining tokens still fail the build.
 FORBIDDEN_DEX_TOKENS = {
-    b"REQUEST_INSTALL_PACKAGES": "install-packages permission",
     b"REQUEST_IGNORE_BATTERY_OPTIMIZATIONS": "battery-exemption permission",
-    b"application/vnd.android.package-archive": "APK installer intent type",
     b"canRequestPackageInstalls": "unknown-app-sources check",
     b"PackageInstaller": "package installer API",
     b"ACTION_INSTALL_PACKAGE": "install intent action",

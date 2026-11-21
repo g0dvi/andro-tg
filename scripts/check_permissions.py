@@ -23,6 +23,9 @@ ALLOWED = frozenset({
     "android.permission.POST_NOTIFICATIONS",
     "android.permission.RECEIVE_BOOT_COMPLETED",
     "android.permission.WAKE_LOCK",
+    # This fork keeps a self-update channel (JSON manifest + APK install) on
+    # purpose: builds are distributed as sideloaded APKs, not via Google Play.
+    "android.permission.REQUEST_INSTALL_PACKAGES",
 })
 
 # Explicitly called out so the failure names the Play Protect capability rather
@@ -30,7 +33,6 @@ ALLOWED = frozenset({
 FORBIDDEN = frozenset({
     "android.permission.INSTALL_PACKAGES",
     "android.permission.REQUEST_DELETE_PACKAGES",
-    "android.permission.REQUEST_INSTALL_PACKAGES",
     "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
     "android.permission.MANAGE_EXTERNAL_STORAGE",
     "android.permission.PACKAGE_USAGE_STATS",

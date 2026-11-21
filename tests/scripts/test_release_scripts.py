@@ -134,16 +134,16 @@ class ApkTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             apk = Path(temporary) / "app.apk"
             with zipfile.ZipFile(apk, "w") as archive:
-                archive.writestr("classes.dex", b"dex\n035\x00application/vnd.android.package-archive\x00")
-            with self.assertRaisesRegex(ValueError, "installer"):
+                archive.writestr("classes.dex", b"dex\n035\x00PackageInstaller\x00")
+            with self.assertRaisesRegex(ValueError, "package installer"):
                 apk_check.check_no_package_installer(apk)
 
-    def test_dex_with_install_permission_string_is_rejected(self):
+    def test_dex_with_battery_exemption_string_is_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             apk = Path(temporary) / "app.apk"
             with zipfile.ZipFile(apk, "w") as archive:
-                archive.writestr("classes.dex", b"dex\n035\x00REQUEST_INSTALL_PACKAGES\x00")
-            with self.assertRaisesRegex(ValueError, "install-packages"):
+                archive.writestr("classes.dex", b"dex\n035\x00REQUEST_IGNORE_BATTERY_OPTIMIZATIONS\x00")
+            with self.assertRaisesRegex(ValueError, "battery-exemption"):
                 apk_check.check_no_package_installer(apk)
 
     def test_clean_dex_passes_installer_check(self):
@@ -182,8 +182,8 @@ class PermissionTests(unittest.TestCase):
         permissions.check(permissions.parse_permissions(self.badging), "io.github.derigava.tgwsproxy")
 
     def test_install_permission_is_named_in_the_error(self):
-        declared = permissions.parse_permissions(self.badging) | {"android.permission.REQUEST_INSTALL_PACKAGES"}
-        with self.assertRaisesRegex(ValueError, "REQUEST_INSTALL_PACKAGES"):
+        declared = permissions.parse_permissions(self.badging) | {"android.permission.SYSTEM_ALERT_WINDOW"}
+        with self.assertRaisesRegex(ValueError, "SYSTEM_ALERT_WINDOW"):
             permissions.check(declared, "io.github.derigava.tgwsproxy")
 
     def test_unexpected_permission_is_rejected(self):
